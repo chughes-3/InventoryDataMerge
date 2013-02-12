@@ -249,6 +249,7 @@ namespace InventoryDataMerge2013
                 if (el.Element("asset_tag") != null && el.Element("asset_tag").Value.Trim() == mrSerPresent.lAssTag && el.Element("mfg_serial_number") != null && el.Element("mfg_serial_number").Value.Trim() == mrSerPresent.lMfgSerNum)
                 {//clean system import from XML to existing spreadsheet data row replacing identical existing data.
                     MergeIDC2RowExist(mrSerMatchIndex);
+                    rowsMerged--;   //to make the numbers add
                     rowsIdentical++;
                 }
                 else
@@ -299,7 +300,7 @@ namespace InventoryDataMerge2013
             }
             catch
             {
-                MessageBox.Show("The Excel program is not accepting programmatic input.\r\nMake sure that you have closed out all editing in the excel spreadsheet.\r\nMake sure that a blank cell is selected.\r\nThen click OK in this Dialog", Start.mbCaption, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("The Excel program is not accepting programmatic input.\r\nMake sure that you have closed out all editing in the excel spreadsheet.\r\nMake sure that a blank cell is selected.\r\nThen click OK in this Dialog", Start.mbCaption, MessageBoxButtons.OK, MessageBoxIcon.Error,MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
                 xlWsheet.Rows[rowMatchIndex + 1].Cut(xlWsheet.Rows[rowMatchIndex]);
             }
             xlWsheet.Rows[rowMatchIndex + 1].Delete();

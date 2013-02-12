@@ -19,10 +19,10 @@ namespace InventoryDataMerge2013
         [STAThread]
         static void Main()
         {
-            DateTime endDate = new DateTime(2013, 1, 31);
+            DateTime endDate = new DateTime(2013, 10, 31);
             if (endDate < DateTime.Now)
             {
-                MessageBox.Show("This program version is intended for use in the 2013 Tax-Aide Inventory reporting activity.\r\nTherefore this version stopped working in Jan 31 2013.\r\n\r\nQuestions? Please contact your TCS or TaxAideTech", "AARP Foundation Tax-Aide");
+                MessageBox.Show("This program version is intended for use in the 2013 Tax-Aide Inventory reporting activity.\r\nTherefore this version stopped working in Oct 31 2013.\r\n\r\nQuestions? Please contact your TCS or TaxAideTech", "AARP Foundation Tax-Aide");
                 Environment.Exit(0);
             }
             Regex myPatt = new Regex(@"\((.*)\)"); //extract process friendly name from full process
@@ -47,7 +47,7 @@ namespace InventoryDataMerge2013
                 {
                     xcel.IDCSysProcess(el);
                 }
-                dR = MessageBox.Show(String.Format("The IDC data merge 2013 is complete with the following results\r\nIDC records processed : {0}\r\nIDC records added to the spreadsheet: {3}\r\nIDC records merged with existing spreadsheet rows (Identical data in search columns) : {1}\r\nIDC records merged with existing spreadsheet rows (one or more search column matches) : {2}\r\nIDC records merged with existing spreadsheet rows (with user help) : {4}\r\n\r\nProcess another TaxAideInv2013.xml file?", xcel.rowsXMLrecsImported, xcel.rowsIdentical, xcel.rowsMerged, xcel.rowsAdded, xcel.rowsMergedHelp), mbCaption,MessageBoxButtons.YesNo,MessageBoxIcon.Question);
+                dR = MessageBox.Show(String.Format("The IDC data merge 2013 is complete with the following results\r\nIDC records processed : {0}\r\nIDC records added to the spreadsheet: {3}\r\nIDC records merged with existing spreadsheet rows (Identical data in search columns) : {1}\r\nIDC records merged with existing spreadsheet rows (one or more search column matches) : {2}\r\nIDC records merged with existing spreadsheet rows (with user help) : {4}\r\n\r\nProcess another TaxAideInv2013.xml file?", xcel.rowsXMLrecsImported, xcel.rowsIdentical, xcel.rowsMerged, xcel.rowsAdded, xcel.rowsMergedHelp), mbCaption, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
                 xcel.rowsIdentical = 0;
                 xcel.rowsMerged = 0;
                 xcel.rowsXMLrecsImported = 0;
