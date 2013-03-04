@@ -18,6 +18,7 @@ namespace InventoryDataMerge2013
         const string colMfgSerHdr = "Mfg_Serial_Number";
         const string colAssTagHdr = "Asset_Tag";
         const int colIDCEquality = 10;  //used in proc that checks existing IDC data against new idc data. Will need to change if change spreadsheet
+        const int colrngGen = 10;   //first column of General format 3 cols total needs to change if change spreadsheet note ZERO Based not 1 based so 10 = K
         char[] alpha = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' }; //4 convert A1 to R1C1
         List<string> colHdrs = new List<string>() { "district_number", "state", "asset_tag", "category", "provider", "mfg_id", "mfg_model", "mfg_serial_number", "mfg_date", "status", "processor_speed", "memory", "hard_drive_size", "notes", "custodial_vol_id", "custodian", "computer_name", "mr_manufacturer", "mr_model", "mr_serial_number", "os_name", "os_version", "os_width", "os_product_key_type", "os_partial_product_key", "os_product_key", "lac_mac", "lac_name" };
 
@@ -92,8 +93,8 @@ namespace InventoryDataMerge2013
 
         internal void SetupRange()
         {
-            //xlWBook.Activate();
-            //xlWsheet.Activate();
+            xlWBook.Activate();
+            xlWsheet.Activate();
             Excel.Range stateSearchRng = xlWsheet.Range["A1:A40"];  //40 rows should be enough to find the State
             object[,] stateSearchObj = new object[40, 1];
             stateSearchObj = stateSearchRng.Value2;
@@ -274,26 +275,27 @@ namespace InventoryDataMerge2013
         private void FldMatchErrAskUser(int rowMatchIndex, string messUserTxt)
         {
             xlWsheet.Rows[rowMatchIndex + 1].Insert();
-            xlWsheet.Rows[rowEndImport + 1].Cut(xlWsheet.Rows[rowMatchIndex + 1]);
+            xlWsheet.Rows[rowEndImport + 1].Copy();
+            xlWsheet.Rows[rowMatchIndex + 1].PasteSpecial();
             xlWsheet.Rows[rowEndImport + 1].Delete();
             rowList.Insert(rowMatchIndex + 1, rowList[rowList.Count - 1]);
             rowList.RemoveAt(rowList.Count - 1);
             Excel.Range rngErr = xlWsheet.Rows.EntireRow[rowMatchIndex.ToString()];
-            //var rowCol = rngErr.Interior.Color;
+            var rowCol = rngErr.Interior.Color;
             rngErr.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightYellow);
-            //var row1Col = rngErr.Offset[1,0].Interior.Color;
+            var row1Col = rngErr.Offset[1,0].Interior.Color;
             rngErr.Offset[1, 0].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightYellow);
-            //var rowTxtCol = rngErr.Font.Color;
+            var rowTxtCol = rngErr.Font.Color;
             rngErr.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.DarkGreen);
-            //var rowTxt1Col = rngErr.Offset[1, 0].Font.Color;
+            var rowTxt1Col = rngErr.Offset[1, 0].Font.Color;
             rngErr.Offset[1, 0].Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Purple);
-            DialogResult dR = MessageBox.Show(string.Format(messUserTxt, rowMatchIndex, rowMatchIndex + 1), Start.mbCaption, MessageBoxButtons.OKCancel, MessageBoxIcon.Error);
+            DialogResult dR = MessageBox.Show(string.Format(messUserTxt, rowMatchIndex, rowMatchIndex + 1), Start.mbCaption, MessageBoxButtons.OKCancel, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1,MessageBoxOptions.ServiceNotification);
             if (dR == DialogResult.Cancel)
                 DisposeX();
-            //rngErr.Interior.Color = rowCol;
-            //rngErr.Offset[1, 0].Interior.Color = row1Col;
-            //rngErr.Font.Color = rowTxtCol;
-            //rngErr.Offset[1, 0].Font.Color = rowTxt1Col;
+            rngErr.Interior.Color = rowCol;
+            rngErr.Offset[1, 0].Interior.Color = row1Col;
+            rngErr.Font.Color = rowTxtCol;
+            rngErr.Offset[1, 0].Font.Color = rowTxt1Col;
             try
             {
                 xlWsheet.Rows[rowMatchIndex + 1].Cut(xlWsheet.Rows[rowMatchIndex]);
@@ -304,7 +306,6 @@ namespace InventoryDataMerge2013
                 xlWsheet.Rows[rowMatchIndex + 1].Cut(xlWsheet.Rows[rowMatchIndex]);
             }
             xlWsheet.Rows[rowMatchIndex + 1].Delete();
-            xlWsheet.Rows[rowMatchIndex].ClearFormats();
             rowEndImport--; //deleted a spreadsheet row so import row goes back
             //update ListRows to capture any At or hr ser changes
             rowList.RemoveAt(rowMatchIndex + 1);
@@ -326,7 +327,10 @@ namespace InventoryDataMerge2013
             {
                 objData[0, i] = el.Element(colHdrs[i]) == null ? string.Empty : el.Element(colHdrs[i]).Value.Trim();
             }
-            rngIDC.ClearFormats();
+            //rngIDC.ClearFormats();
+            rngIDC.NumberFormat = "@";
+            Excel.Range rngGeneral = xlWsheet.Range[alpha[colrngGen] + rowEndImport.ToString() + ":" + alpha[colrngGen + 2] + rowEndImport.ToString()];
+            rngGeneral.NumberFormat = "General";
             rngIDC.Value2 = objData;
             //Next update Row list not really needed except need to keep it synchronized in case of error conditions so do it anyway
             rowList.Add(new RowData { lAssTag = el.Element(colAssTagHdr.ToLower()).Value.Trim(), lMfgSerNum = el.Element(colMfgSerHdr.ToLower()).Value.Trim(), lMRedSerNum = el.Element(colMRedSerHdr.ToLower()).Value.Trim() });
