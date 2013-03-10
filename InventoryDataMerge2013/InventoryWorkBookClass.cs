@@ -281,13 +281,13 @@ namespace InventoryDataMerge2013
             rowList.Insert(rowMatchIndex + 1, rowList[rowList.Count - 1]);
             rowList.RemoveAt(rowList.Count - 1);
             Excel.Range rngErr = xlWsheet.Rows.EntireRow[rowMatchIndex.ToString()];
-            var rowCol = rngErr.Interior.Color;
+            var rowCol = rngErr.Cells[1,1].Interior.Color;
             rngErr.Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightYellow);
-            var row1Col = rngErr.Offset[1,0].Interior.Color;
+            var row1Col = rngErr.Cells[2,1].Interior.Color;
             rngErr.Offset[1, 0].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.LightYellow);
-            var rowTxtCol = rngErr.Font.Color;
+            var rowTxtCol = rngErr.Cells[1,1].Font.Color;
             rngErr.Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.DarkGreen);
-            var rowTxt1Col = rngErr.Offset[1, 0].Font.Color;
+            var rowTxt1Col = rngErr.Cells[2, 1].Font.Color;
             rngErr.Offset[1, 0].Font.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Purple);
             DialogResult dR = MessageBox.Show(string.Format(messUserTxt, rowMatchIndex, rowMatchIndex + 1), Start.mbCaption, MessageBoxButtons.OKCancel, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1,MessageBoxOptions.ServiceNotification);
             if (dR == DialogResult.Cancel)
@@ -298,12 +298,16 @@ namespace InventoryDataMerge2013
             rngErr.Offset[1, 0].Font.Color = rowTxt1Col;
             try
             {
-                xlWsheet.Rows[rowMatchIndex + 1].Cut(xlWsheet.Rows[rowMatchIndex]);
+                xlWsheet.Rows[rowMatchIndex + 1].Copy();
+                xlWsheet.Rows[rowMatchIndex].PasteSpecial(SkipBlanks: true);
+                xlWsheet.Rows[rowMatchIndex + 1].Delete();
             }
             catch
             {
                 MessageBox.Show("The Excel program is not accepting programmatic input.\r\nMake sure that you have closed out all editing in the excel spreadsheet.\r\nMake sure that a blank cell is selected.\r\nThen click OK in this Dialog", Start.mbCaption, MessageBoxButtons.OK, MessageBoxIcon.Error,MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
-                xlWsheet.Rows[rowMatchIndex + 1].Cut(xlWsheet.Rows[rowMatchIndex]);
+                xlWsheet.Rows[rowMatchIndex + 1].Copy();
+                xlWsheet.Rows[rowMatchIndex].PasteSpecial(SkipBlanks: true);
+                xlWsheet.Rows[rowMatchIndex + 1].Delete();
             }
             xlWsheet.Rows[rowMatchIndex + 1].Delete();
             rowEndImport--; //deleted a spreadsheet row so import row goes back
@@ -326,11 +330,15 @@ namespace InventoryDataMerge2013
             for (int i = 0; i < colHdrs.Count; i++)
             {
                 objData[0, i] = el.Element(colHdrs[i]) == null ? string.Empty : el.Element(colHdrs[i]).Value.Trim();
+                if ((el.Element(colHdrs[i]) != null && el.Element(colHdrs[i]).Value.Trim() != string.Empty) && (i < colrngGen || i > (colrngGen + 2)))
+                {
+                    xlWsheet.Cells[rowEndImport, i + 1].NumberFormat = "@";
+                }
             }
             //rngIDC.ClearFormats();
-            rngIDC.NumberFormat = "@";
-            Excel.Range rngGeneral = xlWsheet.Range[alpha[colrngGen] + rowEndImport.ToString() + ":" + alpha[colrngGen + 2] + rowEndImport.ToString()];
-            rngGeneral.NumberFormat = "General";
+            //rngIDC.NumberFormat = "@";
+            //Excel.Range rngGeneral = xlWsheet.Range[alpha[colrngGen] + rowEndImport.ToString() + ":" + alpha[colrngGen + 2] + rowEndImport.ToString()];
+            //rngGeneral.NumberFormat = "General";
             rngIDC.Value2 = objData;
             //Next update Row list not really needed except need to keep it synchronized in case of error conditions so do it anyway
             rowList.Add(new RowData { lAssTag = el.Element(colAssTagHdr.ToLower()).Value.Trim(), lMfgSerNum = el.Element(colMfgSerHdr.ToLower()).Value.Trim(), lMRedSerNum = el.Element(colMRedSerHdr.ToLower()).Value.Trim() });
