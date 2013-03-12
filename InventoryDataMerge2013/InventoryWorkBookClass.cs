@@ -18,7 +18,7 @@ namespace InventoryDataMerge2013
         const string colMfgSerHdr = "Mfg_Serial_Number";
         const string colAssTagHdr = "Asset_Tag";
         const int colIDCEquality = 10;  //used in proc that checks existing IDC data against new idc data. Will need to change if change spreadsheet
-        const int colrngGen = 10;   //first column of General format 3 cols total needs to change if change spreadsheet note ZERO Based not 1 based so 10 = K
+        const int colrngGen = 10;   //first column of General format 3 cols total needs to change if change spreadsheet note ZERO Based not 1 based so 10 = K, when used with range.Cells need + 1 to make 1 based
         char[] alpha = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' }; //4 convert A1 to R1C1
         List<string> colHdrs = new List<string>() { "district_number", "state", "asset_tag", "category", "provider", "mfg_id", "mfg_model", "mfg_serial_number", "mfg_date", "status", "processor_speed", "memory", "hard_drive_size", "notes", "custodial_vol_id", "custodian", "computer_name", "mr_manufacturer", "mr_model", "mr_serial_number", "os_name", "os_version", "os_width", "os_product_key_type", "os_partial_product_key", "os_product_key", "lac_mac", "lac_name" };
 
@@ -300,14 +300,12 @@ namespace InventoryDataMerge2013
             {
                 xlWsheet.Rows[rowMatchIndex + 1].Copy();
                 xlWsheet.Rows[rowMatchIndex].PasteSpecial(SkipBlanks: true);
-                xlWsheet.Rows[rowMatchIndex + 1].Delete();
             }
             catch
             {
                 MessageBox.Show("The Excel program is not accepting programmatic input.\r\nMake sure that you have closed out all editing in the excel spreadsheet.\r\nMake sure that a blank cell is selected.\r\nThen click OK in this Dialog", Start.mbCaption, MessageBoxButtons.OK, MessageBoxIcon.Error,MessageBoxDefaultButton.Button1, MessageBoxOptions.ServiceNotification);
                 xlWsheet.Rows[rowMatchIndex + 1].Copy();
                 xlWsheet.Rows[rowMatchIndex].PasteSpecial(SkipBlanks: true);
-                xlWsheet.Rows[rowMatchIndex + 1].Delete();
             }
             xlWsheet.Rows[rowMatchIndex + 1].Delete();
             rowEndImport--; //deleted a spreadsheet row so import row goes back
@@ -319,27 +317,18 @@ namespace InventoryDataMerge2013
         }
         void ImportXmlRow(System.Xml.Linq.XElement el)
         {
-            string colEnd = "";
-            if (colHdrs.Count < 26)
-                colEnd = alpha[colHdrs.Count - 1].ToString();
-            else if (colHdrs.Count < 52)
-                colEnd = "A" + alpha[colHdrs.Count - 27].ToString();     //if more than 52 cols will throw an error
-            object[,] objData = new object[1, colHdrs.Count];
             rowEndImport++;   //we are extending worksheet by one row
-            Excel.Range rngIDC = xlWsheet.Range["A" + rowEndImport.ToString() + ":" + colEnd + rowEndImport.ToString()];
+            Excel.Range rngIDC = xlWsheet.Rows.EntireRow[rowEndImport];
+            rngIDC.NumberFormat = "@";
+            Excel.Range rngGeneral = xlWsheet.Range[xlWsheet.Cells[rowEndImport, colrngGen + 1], xlWsheet.Cells[rowEndImport, colrngGen + 3]];
+            rngGeneral.NumberFormat = "General";
             for (int i = 0; i < colHdrs.Count; i++)
-            {
-                objData[0, i] = el.Element(colHdrs[i]) == null ? string.Empty : el.Element(colHdrs[i]).Value.Trim();
-                if ((el.Element(colHdrs[i]) != null && el.Element(colHdrs[i]).Value.Trim() != string.Empty) && (i < colrngGen || i > (colrngGen + 2)))
+            {//Must paste in data cell by cell because the alternative of pasting the row makes Excel think the empty cells have data which messes up the pasteSpecial skipblanks
+                if ((el.Element(colHdrs[i]) != null && el.Element(colHdrs[i]).Value.Trim() != string.Empty) )
                 {
-                    xlWsheet.Cells[rowEndImport, i + 1].NumberFormat = "@";
+                    xlWsheet.Cells[rowEndImport, i + 1].Value2 = el.Element(colHdrs[i]).Value.Trim();   //cells is 1 based
                 }
             }
-            //rngIDC.ClearFormats();
-            //rngIDC.NumberFormat = "@";
-            //Excel.Range rngGeneral = xlWsheet.Range[alpha[colrngGen] + rowEndImport.ToString() + ":" + alpha[colrngGen + 2] + rowEndImport.ToString()];
-            //rngGeneral.NumberFormat = "General";
-            rngIDC.Value2 = objData;
             //Next update Row list not really needed except need to keep it synchronized in case of error conditions so do it anyway
             rowList.Add(new RowData { lAssTag = el.Element(colAssTagHdr.ToLower()).Value.Trim(), lMfgSerNum = el.Element(colMfgSerHdr.ToLower()).Value.Trim(), lMRedSerNum = el.Element(colMRedSerHdr.ToLower()).Value.Trim() });
             rowsXMLrecsImported++;
